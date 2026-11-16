@@ -1,0 +1,1800 @@
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#111317" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Matrice TESLA — Mobile Atelier</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            tesla: {
+              red: '#E82127',
+              dark: '#0D0F12',
+              slate: '#161920',
+              panel: '#1E222B',
+              blue: '#0284C7',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Masquer les barres de défilement horizontales sur les pilules tactiles */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Empêcher tout débordement horizontal et rebond indésirable */
+    html, body {
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    /* Support Safe Area iOS/Android */
+    .pb-safe {
+      padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+    }
+    .bottom-bar-safe {
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    /* Animation fluide des vues */
+    @keyframes fadeSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .animate-view {
+      animation: fadeSlideUp 0.18s ease-out forwards;
+    }
+
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+      #app-shell {
+        max-width: 100% !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-200 dark:bg-black text-slate-900 dark:text-slate-100 font-sans antialiased selection:bg-tesla-red selection:text-white">
+
+  <!-- Conteneur Smartphone (360px-430px natif, centré comme un smartphone sur grand écran avec option plein écran) -->
+  <div id="app-shell" class="mx-auto w-full max-w-[430px] min-h-screen bg-slate-50 dark:bg-tesla-dark shadow-2xl sm:border-x sm:border-slate-300 dark:sm:border-slate-800 relative flex flex-col transition-all duration-200">
+
+    <!-- Toast Mobile (Zéro alert()) -->
+    <div id="toast-container" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-[390px] flex flex-col gap-2 pointer-events-none no-print"></div>
+
+    <!-- =================================================================== -->
+    <!-- EN-TÊTE COMPACT FIXE (STICKY TOP)                                   -->
+    <!-- =================================================================== -->
+    <header class="sticky top-0 z-40 bg-white/95 dark:bg-tesla-slate/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 no-print">
+      <!-- Ligne 1 : Identité TESLA + Actions rapides au pouce -->
+      <div class="px-3.5 py-2.5 flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-9 h-9 rounded-xl bg-tesla-red flex items-center justify-center shadow-sm shadow-red-600/30 shrink-0">
+            <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 5h16" />
+              <path d="M12 5v14" />
+              <path d="M9 19h6" />
+            </svg>
+          </div>
+          <div class="truncate">
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] font-mono font-extrabold uppercase tracking-wider text-tesla-red">TESLA • UAP</span>
+              <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold">TEP</span>
+            </div>
+            <h1 class="text-sm font-extrabold tracking-tight text-slate-900 dark:text-white truncate">
+              Paramètres Machines
+            </h1>
+          </div>
+        </div>
+
+        <!-- Boutons d'action tactile (>= 44px-48px) -->
+        <div class="flex items-center gap-1.5 shrink-0">
+          <!-- Bouton Recherche Rapide -->
+          <button onclick="toggleQuickSearch()" id="btn-search-toggle" aria-label="Recherche rapide" class="w-11 h-11 rounded-xl flex items-center justify-center bg-slate-100 dark:bg-tesla-panel text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 active:scale-95 transition-transform">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </button>
+
+          <!-- Interrupteur Mode Contrôle Opérateur -->
+          <button onclick="toggleChecklistMode()" id="btn-checklist-toggle" aria-label="Mode Contrôle Opérateur" class="h-11 px-2.5 rounded-xl flex items-center gap-1.5 bg-slate-100 dark:bg-tesla-panel text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 active:scale-95 transition-all">
+            <svg class="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.3">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span id="checklist-status-pill" class="text-[11px] font-mono font-extrabold px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">OFF</span>
+          </button>
+
+          <!-- Bouton Thème Clair/Sombre -->
+          <button onclick="toggleTheme()" aria-label="Changer de thème" class="w-11 h-11 rounded-xl flex items-center justify-center bg-slate-100 dark:bg-tesla-panel text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 active:scale-95 transition-transform">
+            <svg class="w-5 h-5 hidden dark:block text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+            <svg class="w-5 h-5 block dark:hidden text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+            </svg>
+          </button>
+
+          <!-- Option Plein Écran sur Grand Écran -->
+          <button onclick="toggleFullWidthDesktop()" id="btn-expand-desktop" aria-label="Basculer largeur" class="hidden sm:flex w-11 h-11 rounded-xl items-center justify-center bg-slate-100 dark:bg-tesla-panel text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 active:scale-95 transition-transform" title="Mode Smartphone / Plein écran">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Tiroir Recherche Rapide (Masqué par défaut) -->
+      <div id="quick-search-drawer" class="hidden px-3.5 pb-3 pt-1 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-tesla-panel">
+        <div class="relative">
+          <svg class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input id="global-search-input" type="search" oninput="handleGlobalSearch(this.value)" placeholder="Rechercher aiguille (140DH), TEX, AIRBAG, guide..." class="w-full h-12 pl-10 pr-10 text-sm rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-tesla-red" />
+          <button onclick="clearGlobalSearch()" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-700">
+            ✕
+          </button>
+        </div>
+        <div id="quick-search-results" class="mt-2 space-y-1.5 max-h-60 overflow-y-auto"></div>
+      </div>
+
+      <!-- Sélecteur Rapide d'Opération : Menu déroulant + Pilules horizontales au pouce (Visible sur Onglet Opération) -->
+      <div id="operation-nav-strip" class="px-3.5 pb-2.5 pt-1 space-y-2 border-t border-slate-100 dark:border-slate-800/80">
+        <!-- Ligne Menu Déroulant + Précédent / Suivant -->
+        <div class="flex items-center gap-1.5">
+          <button onclick="prevOperation()" aria-label="Opération précédente" class="w-12 h-12 rounded-xl bg-slate-100 dark:bg-tesla-panel border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 active:scale-95 transition-transform shrink-0">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+
+          <div class="relative flex-1">
+            <select id="op-dropdown-select" onchange="selectOperation(Number(this.value))" class="w-full h-12 pl-3.5 pr-9 rounded-xl bg-slate-900 dark:bg-slate-800 text-white font-bold text-sm appearance-none border border-slate-700 focus:outline-none focus:ring-2 focus:ring-tesla-red truncate">
+              <!-- Options injectées via JS -->
+            </select>
+            <svg class="w-4 h-4 text-slate-300 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+
+          <button onclick="nextOperation()" aria-label="Opération suivante" class="w-12 h-12 rounded-xl bg-slate-100 dark:bg-tesla-panel border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 active:scale-95 transition-transform shrink-0">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Pilules Horizontales Défilantes au Pouce -->
+        <div id="horizontal-pills" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+          <!-- Pilules injectées via JS -->
+        </div>
+      </div>
+    </header>
+
+    <!-- =================================================================== -->
+    <!-- CONTENU PRINCIPAL (ZONE TACTILE AVEC SUPPORT SWIPE)                 -->
+    <!-- =================================================================== -->
+    <main id="main-swipe-area" class="flex-1 px-3.5 pt-3.5 pb-safe space-y-4">
+
+      <!-- ================================================================= -->
+      <!-- ONGLET 1 : OPÉRATION (FICHE TECHNIQUE DÉTAILLÉE + CHECKLIST)      -->
+      <!-- ================================================================= -->
+      <section id="view-operation" class="animate-view space-y-3.5">
+        <!-- Contenu injecté dynamiquement via renderOperationView() -->
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- ONGLET 2 : COMPARER (A vs B CÔTE-À-CÔTE OPTIMISÉ ÉCRAN ÉTROIT)    -->
+      <!-- ================================================================= -->
+      <section id="view-comparer" class="hidden animate-view space-y-3.5">
+        <div class="bg-white dark:bg-tesla-slate rounded-2xl p-3.5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
+            <h2 class="text-base font-extrabold text-slate-900 dark:text-white">Comparateur A vs B</h2>
+            <label class="inline-flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-3 py-2 rounded-xl min-h-[40px] cursor-pointer">
+              <input type="checkbox" id="diff-only-toggle" onchange="renderCompareView()" class="w-4 h-4 rounded text-tesla-red focus:ring-tesla-red" />
+              <span>Écarts seuls</span>
+            </label>
+          </div>
+
+          <!-- Sélecteurs A vs B larges au pouce -->
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <span class="text-[10px] font-mono font-extrabold uppercase text-tesla-red block mb-1">Machine A</span>
+              <select id="compare-select-a" onchange="updateCompareSelection()" class="w-full h-12 px-2.5 rounded-xl bg-slate-50 dark:bg-tesla-panel border-2 border-tesla-red/60 text-xs font-bold text-slate-900 dark:text-white focus:outline-none">
+                <!-- Options JS -->
+              </select>
+            </div>
+            <div>
+              <span class="text-[10px] font-mono font-extrabold uppercase text-tesla-blue block mb-1">Machine B</span>
+              <select id="compare-select-b" onchange="updateCompareSelection()" class="w-full h-12 px-2.5 rounded-xl bg-slate-50 dark:bg-tesla-panel border-2 border-tesla-blue/60 text-xs font-bold text-slate-900 dark:text-white focus:outline-none">
+                <!-- Options JS -->
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cartes de comparaison empilées côte-à-côte -->
+        <div id="compare-cards-container" class="space-y-2.5">
+          <!-- Injecté via JS -->
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- ONGLET 3 : MATRICE (LISTE ACCORDÉON COMPACTE MOBILE + CSV)        -->
+      <!-- ================================================================= -->
+      <section id="view-matrice" class="hidden animate-view space-y-3">
+        <!-- Barre filtre + Export CSV -->
+        <div class="bg-white dark:bg-tesla-slate rounded-2xl p-3.5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-2.5">
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <h2 class="text-base font-extrabold text-slate-900 dark:text-white">Matrice Complète (9 Op.)</h2>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">Touchez une opération pour déplier ou ouvrir sa fiche</p>
+            </div>
+            <button onclick="exportCSV()" class="h-12 px-3.5 rounded-xl bg-slate-900 dark:bg-slate-700 text-white text-xs font-bold flex items-center gap-1.5 active:scale-95 transition-transform shrink-0">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              <span>CSV</span>
+            </button>
+          </div>
+
+          <!-- Filtres rapides par type de fil -->
+          <div class="flex gap-1.5 overflow-x-auto no-scrollbar pt-1">
+            <button onclick="setMatrixFilter('ALL')" id="mfilter-ALL" class="mfilter-btn h-10 px-3.5 rounded-xl text-xs font-bold bg-tesla-red text-white shrink-0">Tous (9)</button>
+            <button onclick="setMatrixFilter('Polyamide')" id="mfilter-Polyamide" class="mfilter-btn h-10 px-3.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-tesla-panel text-slate-700 dark:text-slate-300 shrink-0">Polyamide (5)</button>
+            <button onclick="setMatrixFilter('Polystère')" id="mfilter-Polystère" class="mfilter-btn h-10 px-3.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-tesla-panel text-slate-700 dark:text-slate-300 shrink-0">Polystère (3)</button>
+            <button onclick="setMatrixFilter('Mixte')" id="mfilter-Mixte" class="mfilter-btn h-10 px-3.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-tesla-panel text-slate-700 dark:text-slate-300 shrink-0">Airbag Mixte (1)</button>
+          </div>
+        </div>
+
+        <!-- Liste Accordéon Mobile des 9 opérations -->
+        <div id="matrix-accordion-list" class="space-y-2.5">
+          <!-- Injecté via JS -->
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- ONGLET 4 : INFOS & VISA (GRAPHIQUES, LÉGENDE & GOUVERNANCE)       -->
+      <!-- ================================================================= -->
+      <section id="view-infos" class="hidden animate-view space-y-4">
+        <!-- Cartes KPI Synthétiques -->
+        <div class="grid grid-cols-2 gap-2.5">
+          <div class="bg-white dark:bg-tesla-slate p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Tension Aiguille</span>
+            <span class="text-lg font-mono font-extrabold text-slate-900 dark:text-white mt-0.5 block">100–550 <span class="text-xs font-normal text-slate-400">cN</span></span>
+            <span class="text-[11px] text-slate-500 mt-1 block">Min: Glaçage • Max: Poche</span>
+          </div>
+          <div class="bg-white dark:bg-tesla-slate p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Vitesse Couture</span>
+            <span class="text-lg font-mono font-extrabold text-slate-900 dark:text-white mt-0.5 block">600–2400</span>
+            <span class="text-[11px] text-slate-500 mt-1 block">Arrêt fixe : 800_1000</span>
+          </div>
+        </div>
+
+        <!-- Graphique 1 : Tensions (cN) -->
+        <div class="bg-white dark:bg-tesla-slate p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">Tensions Fil (cN)</h3>
+              <p class="text-[11px] text-slate-500">Aiguille (rouge) vs Canette (bleu)</p>
+            </div>
+            <div class="flex items-center gap-2.5 text-[11px] font-semibold">
+              <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-tesla-red"></span>Aig.</span>
+              <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-tesla-blue"></span>Can.</span>
+            </div>
+          </div>
+          <div id="mobile-chart-tensions" class="space-y-3"></div>
+        </div>
+
+        <!-- Graphique 2 : Vitesses Couture (stitches/min) -->
+        <div class="bg-white dark:bg-tesla-slate p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">Vitesses Couture (st/min)</h3>
+              <p class="text-[11px] text-slate-500">Cadence nominale par opération</p>
+            </div>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">Max 2400</span>
+          </div>
+          <div id="mobile-chart-speeds" class="space-y-2.5"></div>
+        </div>
+
+        <!-- Légende Technique Atelier (TEX / Nm / cN / Pointes) -->
+        <div class="bg-white dark:bg-tesla-slate p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-2.5">
+          <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">Légende Technique Atelier</h3>
+          <div class="grid grid-cols-1 gap-2 text-xs">
+            <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-tesla-panel border border-slate-200/70 dark:border-slate-700">
+              <span class="font-mono font-bold text-tesla-red">cN (Centinewton) :</span>
+              <span class="text-slate-600 dark:text-slate-300"> Unité de mesure de tension du fil aiguille et canette au tensiomètre.</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-tesla-panel border border-slate-200/70 dark:border-slate-700">
+              <span class="font-mono font-bold text-tesla-blue">TEX (30 / 70 / 90 / 135) :</span>
+              <span class="text-slate-600 dark:text-slate-300"> Titrage du fil (masse en grammes pour 1000 m). <strong>30 TEX</strong> réservé à la canette AIRBAG.</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-tesla-panel border border-slate-200/70 dark:border-slate-700">
+              <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400">Aiguille Nm & Pointe (R, RG, SD, DH) :</span>
+              <span class="text-slate-600 dark:text-slate-300"> Diamètre en 1/100 mm (110 à 140). <strong>R/RG</strong> : pointe ronde • <strong>SD/DH</strong> : pointes tranchantes cuir/TEP.</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-tesla-panel border border-slate-200/70 dark:border-slate-700">
+              <span class="font-mono font-bold text-amber-600 dark:text-amber-400">Matière TEP & Pression :</span>
+              <span class="text-slate-600 dark:text-slate-300"> Similicuir automobile TEP • Pression pied presseur standardisée à <strong>Medium</strong>.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cartouche Officiel d'Approbation Qualité & Gouvernance -->
+        <div class="bg-white dark:bg-tesla-slate rounded-2xl border-2 border-slate-300 dark:border-slate-700 shadow-sm overflow-hidden">
+          <div class="bg-slate-900 text-white px-4 py-3 flex items-center justify-between">
+            <span class="text-xs font-extrabold uppercase tracking-wider flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-tesla-red"></span>
+              Gouvernance & Signatures Qualité
+            </span>
+            <button onclick="window.print()" class="text-[11px] font-mono bg-white/15 px-2.5 py-1 rounded-lg active:scale-95">
+              Imprimer
+            </button>
+          </div>
+
+          <div class="p-4 space-y-3">
+            <!-- 1. Émission -->
+            <div class="p-3 rounded-xl bg-slate-50 dark:bg-tesla-panel border border-slate-200 dark:border-slate-700 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-extrabold uppercase px-2 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">1. Émission</span>
+                <span class="text-xs font-bold text-slate-900 dark:text-white">Ing. Process</span>
+              </div>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                Périmètre : <strong class="text-slate-700 dark:text-slate-200">ASSEMBLAGE, AIRBAG, Glaçage</strong>
+              </p>
+              <input type="text" id="visa-emission" oninput="saveVisas()" placeholder="Nom / Visa Ing. Process..." class="w-full h-11 px-3 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 focus:outline-none focus:border-tesla-blue" />
+            </div>
+
+            <!-- 2. Validation -->
+            <div class="p-3 rounded-xl bg-slate-50 dark:bg-tesla-panel border border-slate-200 dark:border-slate-700 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-extrabold uppercase px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">2. Validation</span>
+                <span class="text-xs font-bold text-slate-900 dark:text-white">Resp. Qualité UAP</span>
+              </div>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                Périmètre : <strong class="text-slate-700 dark:text-slate-200">Surpiqure double</strong>
+              </p>
+              <input type="text" id="visa-validation" oninput="saveVisas()" placeholder="Nom / Visa Resp. Qualité UAP..." class="w-full h-11 px-3 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 focus:outline-none focus:border-emerald-500" />
+            </div>
+
+            <!-- 3. Approbation -->
+            <div class="p-3 rounded-xl bg-slate-50 dark:bg-tesla-panel border border-slate-200 dark:border-slate-700 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-extrabold uppercase px-2 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">3. Approbation</span>
+                <span class="text-xs font-bold text-slate-900 dark:text-white">Superviseur Prod.</span>
+              </div>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                Périmètre : <strong class="text-slate-700 dark:text-slate-200">Profil, Profil CAV</strong>
+              </p>
+              <input type="text" id="visa-approbation" oninput="saveVisas()" placeholder="Nom / Visa Superviseur Prod...." class="w-full h-11 px-3 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 focus:outline-none focus:border-amber-500" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- =================================================================== -->
+    <!-- BARRE FIXE CONTRÔLE OPÉRATEUR (AFFICHÉE QUAND MODE CONTRÔLE = ON)    -->
+    <!-- =================================================================== -->
+    <div id="checklist-sticky-footer" class="hidden fixed bottom-[68px] left-1/2 -translate-x-1/2 w-full max-w-[430px] z-40 px-3 no-print">
+      <div id="checklist-footer-card" class="rounded-2xl p-3 shadow-xl border backdrop-blur-md bg-slate-900/95 text-white border-slate-700 flex items-center justify-between gap-2.5">
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <span id="checklist-counter-badge" class="px-2 py-0.5 rounded-md font-mono text-xs font-extrabold bg-amber-500 text-slate-950">0/6</span>
+            <span id="checklist-footer-title" class="text-xs font-extrabold truncate">Contrôle démarrage</span>
+          </div>
+          <p id="checklist-footer-sub" class="text-[11px] text-slate-300 truncate mt-0.5">Cochez les 6 blocs techniques</p>
+        </div>
+        <button id="btn-confirm-conformity" onclick="confirmPostConformity()" class="h-11 px-3.5 rounded-xl text-xs font-extrabold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md active:scale-95 transition-all shrink-0">
+          Confirmer conformité poste
+        </button>
+      </div>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- BARRE DE NAVIGATION INFÉRIEURE FIXE (BOTTOM TAB BAR AU POUCE)       -->
+    <!-- =================================================================== -->
+    <nav aria-label="Navigation principale mobile" class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-40 bg-white/95 dark:bg-tesla-slate/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 bottom-bar-safe no-print">
+      <div class="grid grid-cols-4 h-[68px]">
+        <!-- Tab 1 : Opération -->
+        <button onclick="switchBottomTab('operation')" id="nav-operation" class="bottom-tab flex flex-col items-center justify-center gap-1 text-tesla-red font-extrabold transition-colors">
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
+          <span class="text-[11px] tracking-tight">Opération</span>
+        </button>
+
+        <!-- Tab 2 : Comparer -->
+        <button onclick="switchBottomTab('comparer')" id="nav-comparer" class="bottom-tab flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400 font-semibold transition-colors">
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+          </svg>
+          <span class="text-[11px] tracking-tight">Comparer</span>
+        </button>
+
+        <!-- Tab 3 : Matrice -->
+        <button onclick="switchBottomTab('matrice')" id="nav-matrice" class="bottom-tab flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400 font-semibold transition-colors">
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+          </svg>
+          <span class="text-[11px] tracking-tight">Matrice</span>
+        </button>
+
+        <!-- Tab 4 : Infos & Visa -->
+        <button onclick="switchBottomTab('infos')" id="nav-infos" class="bottom-tab flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400 font-semibold transition-colors">
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+          <span class="text-[11px] tracking-tight">Infos & Visa</span>
+        </button>
+      </div>
+    </nav>
+
+  </div>
+
+  <script>
+    // =========================================================================
+    // 1. BASE DE DONNÉES INTÉGRALE ET EXACTE (Matrice TESLA-Paramètres machines.xlsx)
+    // =========================================================================
+    const OPERATIONS_DATA = [
+      {
+        id: 1,
+        name: "ASSEMBLAGE",
+        shortName: "1. ASSEMBLAGE",
+        isDoubleNeedle: false,
+        isSafetyCritical: false,
+        threadFilter: "Polyamide",
+        threadType: "Polyamide",
+        material: "TEP",
+        stitchLength: "25MM : 8 Stitch+/-1",
+        tensionNeedle: "380-420 cN",
+        tensionNeedleMax: 420,
+        tensionBobbin: "50-100 cN",
+        tensionBobbinMax: 100,
+        stroke: "3_6",
+        speedSewing: "2100_2400",
+        speedSewingMin: 2100,
+        speedSewingMax: 2400,
+        speedBacktack: "800_1000",
+        needleDiameter: "120 SD",
+        threadNeedleType: "70 TEX",
+        threadBobbinType: "70 TEX",
+        presserFootPressure: "Medium",
+        presserFootVisuals: "Picture Feet & Picture Guide",
+        presserFootDescription: "Feet: large - 2 tabs (10mm) — Guide: Flat",
+        schematicType: "LARGE_2TABS_FLAT",
+        governance: "Émission : Ing. Process"
+      },
+      {
+        id: 2,
+        name: "Surpiqure Simple",
+        shortName: "2. Surpiqure Simple",
+        isDoubleNeedle: false,
+        isSafetyCritical: false,
+        threadFilter: "Polystère",
+        threadType: "Polystère",
+        material: "TEP",
+        stitchLength: "25MM : 5 Stitch +/- 1",
+        tensionNeedle: "400_420 cN",
+        tensionNeedleMax: 420,
+        tensionBobbin: "130_150 cN",
+        tensionBobbinMax: 150,
+        stroke: "3 _ 4",
+        speedSewing: "1500_1800",
+        speedSewingMin: 1500,
+        speedSewingMax: 1800,
+        speedBacktack: "800_1000",
+        needleDiameter: "130 SD",
+        threadNeedleType: "135 TEX",
+        threadBobbinType: "70 TEX",
+        presserFootPressure: "Medium",
+        presserFootVisuals: "Standard pont 5 mm",
+        presserFootDescription: "Groupe de pied pour couture de pont, guidage à gauche. 5 mm",
+        schematicType: "BRIDGE_LEFT_5MM",
+        governance: "Standard Atelier TESLA"
+      },
+      {
+        id: 3,
+        name: "Surpiqure double",
+        shortName: "3. Surpiqure double",
+        isDoubleNeedle: true,
+        isSafetyCritical: false,
+        threadFilter: "Polystère",
+        threadType: "Polystère",
+        material: "TEP",
+        stitchLength: "Aiguille gauche 25mm : 5 Stitch +/- 1 / Aiguille droite 25mm : 5 Stitch +/- 1",
+        stitchLengthLeft: "25mm : 5 Stitch +/- 1",
+        stitchLengthRight: "25mm : 5 Stitch +/- 1",
+        tensionNeedle: "Aiguille gauche 390-410 cN / Aiguille droite 390-410 cN",
+        tensionNeedleLeft: "390-410 cN",
+        tensionNeedleRight: "390-410 cN",
+        tensionNeedleMax: 410,
+        tensionBobbin: "Aiguille gauche 130-150 cN / Aiguille droite 130-150 cN",
+        tensionBobbinLeft: "130-150 cN",
+        tensionBobbinRight: "130-150 cN",
+        tensionBobbinMax: 150,
+        stroke: "Aiguille gauche 3_4 / Aiguille droite 3_4",
+        strokeLeft: "3_4",
+        strokeRight: "3_4",
+        speedSewing: "1500_1800",
+        speedSewingMin: 1500,
+        speedSewingMax: 1800,
+        speedBacktack: "800_1000",
+        needleDiameter: "Aiguille gauche 130SD / Aiguille droite 130SD",
+        needleDiameterLeft: "130SD",
+        needleDiameterRight: "130SD",
+        threadNeedleType: "135 TEX",
+        threadBobbinType: "70TEX",
+        presserFootPressure: "Medium",
+        presserFootVisuals: "Couture double + Centreur",
+        presserFootDescription: "Groupe de pied pour couture double, possibilité de guidage avec centreur.",
+        schematicType: "DOUBLE_CENTER_GUIDE",
+        governance: "Validation : Resp. Qualité UAP"
+      },
+      {
+        id: 4,
+        name: "AIRBAG",
+        shortName: "4. AIRBAG (CRITIQUE)",
+        isDoubleNeedle: false,
+        isSafetyCritical: true,
+        threadFilter: "Mixte",
+        threadType: "polyamide/Polystére",
+        material: "TEP",
+        stitchLength: "25MM : 5 stitch +/-1",
+        tensionNeedle: "400 cN",
+        tensionNeedleMax: 400,
+        tensionBobbin: "100 cN",
+        tensionBobbinMax: 100,
+        stroke: "4",
+        speedSewing: "600_1200",
+        speedSewingMin: 600,
+        speedSewingMax: 1200,
+        speedBacktack: "800_1000",
+        needleDiameter: "110 R",
+        threadNeedleType: "70 TEX",
+        threadBobbinType: "30 TEX",
+        presserFootPressure: "Medium",
+        presserFootVisuals: "Picture Feet & Picture Guide",
+        presserFootDescription: "Feet: large - 2 tabs (10mm) — Guide: Notch Detection",
+        schematicType: "AIRBAG_NOTCH_DETECTION",
+        governance: "Émission : Ing. Process"
+      },
+      {
+        id: 5,
+        name: "Fermeture du poche",
+        shortName: "5. Fermeture du poche",
+        isDoubleNeedle: true,
+        isSafetyCritical: false,
+        threadFilter: "Polystère",
+        threadType: "Polystère",
+        material: "TEP",
+        stitchLength: "Aiguille gauche 25MM : 5 Stitch +/- 1 / Aiguille droite 25MM : 5 Stitch +/- 1",
+        stitchLengthLeft: "25MM : 5 Stitch +/- 1",
+        stitchLengthRight: "25MM : 5 Stitch +/- 1",
+        tensionNeedle: "Aiguille gauche 500-550 cN / Aiguille droite 500-550 cN",
+        tensionNeedleLeft: "500-550 cN",
+        tensionNeedleRight: "500-550 cN",
+        tensionNeedleMax: 550,
+        tensionBobbin: "Aiguille gauche 130-150 cN / Aiguille droite 130-150 cN",
+        tensionBobbinLeft: "130-150 cN",
+        tensionBobbinRight: "130-150 cN",
+        tensionBobbinMax: 150,
+        stroke: "Aiguille gauche 3_4 / Aiguille droite 3_4",
+        strokeLeft: "3_4",
+        strokeRight: "3_4",
+        speedSewing: "1500_1800",
+        speedSewingMin: 1500,
+        speedSewingMax: 1800,
+        speedBacktack: "800_1000",
+        needleDiameter: "Aiguille gauche 140DH / Aiguille droite 140DH",
+        needleDiameterLeft: "140DH",
+        needleDiameterRight: "140DH",
+        threadNeedleType: "135 TEX",
+        threadBobbinType: "135 TEX",
+        presserFootPressure: "Medium",
+        presserFootVisuals: "Couture double + Centreur",
+        presserFootDescription: "Groupe de pied pour couture double, possibilité de guidage avec centreur.",
+        schematicType: "DOUBLE_CENTER_GUIDE",
+        governance: "Standard Atelier TESLA"
+      },
+      {
+        id: 6,
+        name: "Profil",
+        shortName: "6. Profil",
+        isDoubleNeedle: false,
+        isSafetyCritical: false,
+        threadFilter: "Polyamide",
+        threadType: "polyamide",
+        material: "TEP",
+        stitchLength: "25MM : 5 Stitch +/- 1",
+        tensionNeedle: "480-500 cN",
+        tensionNeedleMax: 500,
+        tensionBobbin: "110-130 cN",
+        tensionBobbinMax: 130,
+        stroke: "4_5",
+        speedSewing: "1500_1800",
+        speedSewingMin: 1500,
+        speedSewingMax: 1800,
+        speedBacktack: "800_1000",
+        needleDiameter: "140DH",
+        threadNeedleType: "90 TEX",
+        threadBobbinType: "90 TEX",
+        presserFootPressure: "Medium",
+        presserFootVisuals: "Schémas Picture Feet & Picture Guide",
+        presserFootDescription: "les points sont au bord droit/gauche du pied presseur.",
+        schematicType: "EDGE_RIGHT_LEFT",
+        governance: "Approbation : Superviseur Prod."
+      },
+      {
+        id: 7,
+        name: "Profil CAV",
+        shortName: "7. Profil CAV",
+        isDoubleNeedle: false,
+        isSafetyCritical: false,
+        threadFilter: "Polyamide",
+        threadType: "polyamide",
+        material: "TEP",
+        stitchLength: "25MM : 5 Stitch +/- 1",
+        tensionNeedle: "480-500 cN",
+        tensionNeedleMax: 500,
+        tensionBobbin: "110-130 cN",
+        tensionBobbinMax: 130,
+        stroke: "4_5",
+        speedSewing: "1500_1800",
+        speedSewingMin: 1500,
+        speedSewingMax: 1800,
+        speedBacktack: "800_1000",
+        needleDiameter: "140 R",
+        threadNeedleType: "90 TEX",
+        threadBobbinType: "90 TEX",
+        presserFootPressure: "Medium",
+        presserFootVisuals: "Schémas Picture Feet & Picture Guide",
+        presserFootDescription: "les points sont au bord droit/gauche du pied presseur.",
+        schematicType: "EDGE_RIGHT_LEFT",
+        governance: "Approbation : Superviseur Prod."
+      },
+      {
+        id: 8,
+        name: "Glaçage",
+        shortName: "8. Glaçage",
+        isDoubleNeedle: false,
+        isSafetyCritical: false,
+        threadFilter: "Polyamide",
+        threadType: "polyamide",
+        material: "TEP",
+        stitchLength: "25MM : 5 Stitch +/- 1",
+        tensionNeedle: "100-150 cN",
+        tensionNeedleMax: 150,
+        tensionBobbin: "50-70 cN",
+        tensionBobbinMax: 70,
+        stroke: "3_4",
+        speedSewing: "2100_2400",
+        speedSewingMin: 2100,
+        speedSewingMax: 2400,
+        speedBacktack: "800_1000",
+        needleDiameter: "110R",
+        threadNeedleType: "70 TEX",
+        threadBobbinType: "70 TEX",
+        presserFootPressure: "Medium",
+        presserFootVisuals: "Picture Feet & Picture Guide",
+        presserFootDescription: "Feet: large - 2 tabs (10mm) — Guide: Flat",
+        schematicType: "LARGE_2TABS_FLAT",
+        governance: "Émission : Ing. Process"
+      },
+      {
+        id: 9,
+        name: "ASSEMBLAGE BAS COIFFE",
+        shortName: "9. ASSEMBLAGE BAS COIFFE",
+        isDoubleNeedle: false,
+        isSafetyCritical: false,
+        threadFilter: "Polyamide",
+        threadType: "polyamide",
+        material: "TEP",
+        stitchLength: "25MM :8 Stitch +/- 1",
+        tensionNeedle: "380-420 cN",
+        tensionNeedleMax: 420,
+        tensionBobbin: "50-100 cN",
+        tensionBobbinMax: 100,
+        stroke: "3_6",
+        speedSewing: "2100_2400",
+        speedSewingMin: 2100,
+        speedSewingMax: 2400,
+        speedBacktack: "800_1000",
+        needleDiameter: "120 RG/110R",
+        threadNeedleType: "70 TEX",
+        threadBobbinType: "70 TEX",
+        presserFootPressure: "Medium",
+        presserFootVisuals: "Picture Feet & Picture Guide",
+        presserFootDescription: "Feet: large - 2 tabs (10mm) — Guide: Flat",
+        schematicType: "LARGE_2TABS_FLAT",
+        governance: "Standard Atelier TESLA"
+      }
+    ];
+
+    // =========================================================================
+    // 2. ÉTAT DE L'APPLICATION MOBILE
+    // =========================================================================
+    let appState = {
+      activeTab: 'operation',
+      selectedOpId: 1,
+      doubleNeedleSide: 'BOTH', // 'BOTH' | 'LEFT' | 'RIGHT'
+      checklistMode: false,
+      checkedItems: {}, // { "1-tensions": true, ... }
+      confirmedOps: {}, // { 1: "14:32", ... }
+      compareA: 1,
+      compareB: 4,
+      matrixFilter: 'ALL',
+      expandedAccordionId: 1,
+      isDesktopFullWidth: false
+    };
+
+    // =========================================================================
+    // 3. NOTIFICATIONS TOAST & THÈME & PLEIN ÉCRAN DESKTOP
+    // =========================================================================
+    function showToast(msg, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const el = document.createElement('div');
+      const styles = {
+        info: 'bg-slate-900 text-white border-slate-700',
+        success: 'bg-emerald-600 text-white border-emerald-500',
+        danger: 'bg-tesla-red text-white border-red-400'
+      };
+      el.className = `px-4 py-3 rounded-2xl border shadow-xl text-xs font-bold text-center transition-all transform -translate-y-2 opacity-0 ${styles[type] || styles.info}`;
+      el.textContent = msg;
+      container.appendChild(el);
+
+      requestAnimationFrame(() => {
+        el.classList.remove('-translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        el.classList.add('opacity-0', '-translate-y-2');
+        setTimeout(() => el.remove(), 220);
+      }, 2400);
+    }
+
+    function toggleTheme() {
+      document.documentElement.classList.toggle('dark');
+      const isDark = document.documentElement.classList.contains('dark');
+      showToast(isDark ? 'Mode Sombre Atelier activé' : 'Mode Clair Haute Lisibilité activé');
+    }
+
+    function toggleFullWidthDesktop() {
+      const shell = document.getElementById('app-shell');
+      const bottomNav = document.querySelector('nav[aria-label="Navigation principale mobile"]');
+      const checklistFooter = document.getElementById('checklist-sticky-footer');
+      appState.isDesktopFullWidth = !appState.isDesktopFullWidth;
+
+      if (appState.isDesktopFullWidth) {
+        shell.classList.remove('max-w-[430px]');
+        shell.classList.add('max-w-2xl');
+        bottomNav.classList.remove('max-w-[430px]');
+        bottomNav.classList.add('max-w-2xl');
+        checklistFooter.classList.remove('max-w-[430px]');
+        checklistFooter.classList.add('max-w-2xl');
+        showToast('Largeur étendue activée');
+      } else {
+        shell.classList.add('max-w-[430px]');
+        shell.classList.remove('max-w-2xl');
+        bottomNav.classList.add('max-w-[430px]');
+        bottomNav.classList.remove('max-w-2xl');
+        checklistFooter.classList.add('max-w-[430px]');
+        checklistFooter.classList.remove('max-w-2xl');
+        showToast('Format Smartphone 430px restauré');
+      }
+    }
+
+    // =========================================================================
+    // 4. RECHERCHE RAPIDE MOBILE
+    // =========================================================================
+    function toggleQuickSearch() {
+      const drawer = document.getElementById('quick-search-drawer');
+      const input = document.getElementById('global-search-input');
+      const isHidden = drawer.classList.contains('hidden');
+      if (isHidden) {
+        drawer.classList.remove('hidden');
+        input.focus();
+        handleGlobalSearch(input.value);
+      } else {
+        drawer.classList.add('hidden');
+      }
+    }
+
+    function clearGlobalSearch() {
+      const input = document.getElementById('global-search-input');
+      input.value = '';
+      document.getElementById('quick-search-results').innerHTML = '';
+      document.getElementById('quick-search-drawer').classList.add('hidden');
+    }
+
+    function handleGlobalSearch(q) {
+      const resultsBox = document.getElementById('quick-search-results');
+      const query = q.toLowerCase().trim();
+      if (!query) {
+        resultsBox.innerHTML = `<div class="text-[11px] text-slate-400 px-1 py-1">Tapez un numéro d'aiguille (110 R, 140DH), un TEX (30, 135) ou un nom d'opération...</div>`;
+        return;
+      }
+
+      const matches = OPERATIONS_DATA.filter(op =>
+        Object.values(op).join(' ').toLowerCase().includes(query)
+      );
+
+      if (matches.length === 0) {
+        resultsBox.innerHTML = `<div class="text-xs text-slate-500 p-2 text-center">Aucun résultat pour « ${q} »</div>`;
+        return;
+      }
+
+      resultsBox.innerHTML = matches.map(op => `
+        <button onclick="jumpToOperation(${op.id})" class="w-full text-left p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2 active:bg-slate-100">
+          <div class="min-w-0">
+            <div class="text-xs font-extrabold text-slate-900 dark:text-white truncate">${op.id}. ${op.name}</div>
+            <div class="text-[11px] font-mono text-slate-500 truncate">Aig: ${op.needleDiameter} • Vit: ${op.speedSewing}</div>
+          </div>
+          <span class="text-xs font-bold text-tesla-red shrink-0">Ouvrir →</span>
+        </button>
+      `).join('');
+    }
+
+    function jumpToOperation(id) {
+      clearGlobalSearch();
+      switchBottomTab('operation');
+      selectOperation(id);
+    }
+
+    // =========================================================================
+    // 5. SCHÉMAS TECHNIQUES SVG ADAPTÉS LARGEUR MOBILE
+    // =========================================================================
+    function getSchematicSVG(type) {
+      switch (type) {
+        case 'LARGE_2TABS_FLAT':
+          return `
+            <svg viewBox="0 0 320 112" class="w-full h-28 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+              <rect x="20" y="14" width="280" height="16" rx="4" fill="#0284C7" opacity="0.18" stroke="#0284C7" stroke-width="1.2"/>
+              <text x="160" y="25" text-anchor="middle" font-size="9.5" font-family="JetBrains Mono" fill="#0284C7" font-weight="bold">GUIDE : FLAT (BUTÉE PLATE)</text>
+              <rect x="85" y="42" width="64" height="44" rx="5" fill="#94A3B8" stroke="#334155" stroke-width="1.6"/>
+              <rect x="171" y="42" width="64" height="44" rx="5" fill="#94A3B8" stroke="#334155" stroke-width="1.6"/>
+              <line x1="160" y1="34" x2="160" y2="94" stroke="#E82127" stroke-width="2.4" stroke-dasharray="4 3"/>
+              <circle cx="160" cy="64" r="4" fill="#E82127"/>
+              <text x="160" y="105" text-anchor="middle" font-size="9.5" font-family="JetBrains Mono" fill="#475569" font-weight="bold">Feet: large - 2 tabs (10mm)</text>
+            </svg>`;
+        case 'BRIDGE_LEFT_5MM':
+          return `
+            <svg viewBox="0 0 320 112" class="w-full h-28 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+              <rect x="52" y="18" width="20" height="72" rx="4" fill="#0284C7" opacity="0.25" stroke="#0284C7" stroke-width="1.5"/>
+              <text x="32" y="54" text-anchor="middle" font-size="8.5" font-family="JetBrains Mono" fill="#0284C7" font-weight="bold" transform="rotate(-90 32 54)">GUIDE G.</text>
+              <rect x="92" y="28" width="136" height="52" rx="6" fill="#94A3B8" stroke="#334155" stroke-width="1.6"/>
+              <rect x="118" y="40" width="84" height="28" rx="4" fill="#E2E8F0"/>
+              <line x1="72" y1="20" x2="114" y2="20" stroke="#E82127" stroke-width="2"/>
+              <text x="93" y="14" text-anchor="middle" font-size="10" font-family="JetBrains Mono" fill="#E82127" font-weight="bold">5 mm</text>
+              <line x1="114" y1="22" x2="114" y2="92" stroke="#E82127" stroke-width="2.4" stroke-dasharray="4 3"/>
+              <text x="160" y="105" text-anchor="middle" font-size="9" font-family="JetBrains Mono" fill="#475569" font-weight="bold">Couture de pont • Guidage gauche 5 mm</text>
+            </svg>`;
+        case 'DOUBLE_CENTER_GUIDE':
+          return `
+            <svg viewBox="0 0 320 112" class="w-full h-28 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+              <rect x="75" y="28" width="70" height="52" rx="5" fill="#94A3B8" stroke="#334155" stroke-width="1.6"/>
+              <rect x="175" y="28" width="70" height="52" rx="5" fill="#94A3B8" stroke="#334155" stroke-width="1.6"/>
+              <rect x="155" y="18" width="10" height="72" rx="2" fill="#0284C7"/>
+              <text x="160" y="13" text-anchor="middle" font-size="9" font-family="JetBrains Mono" fill="#0284C7" font-weight="bold">CENTREUR CENTRAL</text>
+              <line x1="126" y1="22" x2="126" y2="90" stroke="#E82127" stroke-width="2.4" stroke-dasharray="4 3"/>
+              <line x1="194" y1="22" x2="194" y2="90" stroke="#E82127" stroke-width="2.4" stroke-dasharray="4 3"/>
+              <text x="102" y="58" text-anchor="middle" font-size="11" font-family="JetBrains Mono" fill="#0F172A" font-weight="bold">G</text>
+              <text x="218" y="58" text-anchor="middle" font-size="11" font-family="JetBrains Mono" fill="#0F172A" font-weight="bold">D</text>
+              <text x="160" y="105" text-anchor="middle" font-size="9" font-family="JetBrains Mono" fill="#475569" font-weight="bold">Pied couture double + Centreur</text>
+            </svg>`;
+        case 'AIRBAG_NOTCH_DETECTION':
+          return `
+            <svg viewBox="0 0 320 112" class="w-full h-28 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-800">
+              <rect x="20" y="12" width="280" height="18" rx="4" fill="#E82127" opacity="0.18" stroke="#E82127" stroke-width="1.4"/>
+              <text x="160" y="24" text-anchor="middle" font-size="9.5" font-family="JetBrains Mono" fill="#E82127" font-weight="bold">⚠ GUIDE : NOTCH DETECTION (ENCOCHE)</text>
+              <rect x="85" y="40" width="64" height="44" rx="5" fill="#94A3B8" stroke="#334155" stroke-width="1.6"/>
+              <rect x="171" y="40" width="64" height="44" rx="5" fill="#94A3B8" stroke="#334155" stroke-width="1.6"/>
+              <polygon points="153,40 167,40 160,52" fill="#E82127"/>
+              <line x1="160" y1="34" x2="160" y2="92" stroke="#E82127" stroke-width="2.4" stroke-dasharray="3 3"/>
+              <text x="160" y="105" text-anchor="middle" font-size="9" font-family="JetBrains Mono" fill="#B91C1C" font-weight="bold">Large 2 tabs (10mm) • Sécurité CSR</text>
+            </svg>`;
+        case 'EDGE_RIGHT_LEFT':
+          return `
+            <svg viewBox="0 0 320 112" class="w-full h-28 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+              <rect x="105" y="24" width="110" height="58" rx="6" fill="#94A3B8" stroke="#334155" stroke-width="1.6"/>
+              <text x="160" y="57" text-anchor="middle" font-size="10" font-family="JetBrains Mono" fill="#0F172A" font-weight="bold">PIED PROFIL</text>
+              <line x1="97" y1="18" x2="97" y2="88" stroke="#E82127" stroke-width="2.5" stroke-dasharray="4 3"/>
+              <line x1="223" y1="18" x2="223" y2="88" stroke="#E82127" stroke-width="2.5" stroke-dasharray="4 3"/>
+              <text x="60" y="56" text-anchor="middle" font-size="9" font-family="JetBrains Mono" fill="#E82127" font-weight="bold">Bord G.</text>
+              <text x="260" y="56" text-anchor="middle" font-size="9" font-family="JetBrains Mono" fill="#E82127" font-weight="bold">Bord D.</text>
+              <text x="160" y="105" text-anchor="middle" font-size="9" font-family="JetBrains Mono" fill="#475569" font-weight="bold">Points au bord droit/gauche du pied</text>
+            </svg>`;
+        default:
+          return '';
+      }
+    }
+
+    // =========================================================================
+    // 6. ONGLET 1 : OPÉRATION (FICHE ATELIER MOBILE + SWIPE + DOUBLE AIGUILLE)
+    // =========================================================================
+    function initOperationSelectors() {
+      const dropdown = document.getElementById('op-dropdown-select');
+      dropdown.innerHTML = OPERATIONS_DATA.map(op =>
+        `<option value="${op.id}">${op.id}. ${op.name}${op.isSafetyCritical ? ' ⚠ CRITIQUE' : ''}</option>`
+      ).join('');
+      dropdown.value = appState.selectedOpId;
+
+      const pills = document.getElementById('horizontal-pills');
+      pills.innerHTML = OPERATIONS_DATA.map(op => {
+        const active = op.id === appState.selectedOpId;
+        const confirmed = !!appState.confirmedOps[op.id];
+        let cls = "h-10 px-3 rounded-xl text-xs font-extrabold whitespace-nowrap border flex items-center gap-1.5 shrink-0 transition-all active:scale-95 ";
+        if (active) {
+          cls += op.isSafetyCritical
+            ? "bg-tesla-red text-white border-tesla-red shadow-sm"
+            : "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-sm";
+        } else {
+          cls += op.isSafetyCritical
+            ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-300 dark:border-red-900"
+            : "bg-white text-slate-700 border-slate-200 dark:bg-tesla-panel dark:text-slate-300 dark:border-slate-700";
+        }
+        return `
+          <button id="pill-op-${op.id}" onclick="selectOperation(${op.id})" class="${cls}">
+            <span class="font-mono opacity-75">${op.id}.</span>
+            <span>${op.name}</span>
+            ${confirmed ? '<span class="w-2 h-2 rounded-full bg-emerald-400"></span>' : ''}
+          </button>
+        `;
+      }).join('');
+
+      // Centrer automatiquement la pilule active au pouce
+      const activePill = document.getElementById(`pill-op-${appState.selectedOpId}`);
+      if (activePill) {
+        activePill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }
+
+    function selectOperation(id) {
+      appState.selectedOpId = id;
+      initOperationSelectors();
+      renderOperationView();
+      updateChecklistFooter();
+    }
+
+    function prevOperation() {
+      const nextId = appState.selectedOpId <= 1 ? OPERATIONS_DATA.length : appState.selectedOpId - 1;
+      selectOperation(nextId);
+    }
+
+    function nextOperation() {
+      const nextId = appState.selectedOpId >= OPERATIONS_DATA.length ? 1 : appState.selectedOpId + 1;
+      selectOperation(nextId);
+    }
+
+    function setDoubleNeedleSide(side) {
+      appState.doubleNeedleSide = side;
+      renderOperationView();
+    }
+
+    function renderCheckButton(opId, key, label) {
+      if (!appState.checklistMode) return '';
+      const fullKey = `${opId}-${key}`;
+      const checked = !!appState.checkedItems[fullKey];
+      return `
+        <button onclick="toggleCheckItem('${fullKey}')" class="mt-3 w-full h-12 rounded-xl border-2 text-xs font-extrabold flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
+          checked
+            ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+            : 'bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600'
+        }">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          <span>${checked ? 'VÉRIFIÉ CONFORME ✓' : label}</span>
+        </button>
+      `;
+    }
+
+    function toggleCheckItem(fullKey) {
+      appState.checkedItems[fullKey] = !appState.checkedItems[fullKey];
+      renderOperationView();
+      updateChecklistFooter();
+    }
+
+    function renderOperationView() {
+      const op = OPERATIONS_DATA.find(o => o.id === appState.selectedOpId) || OPERATIONS_DATA[0];
+      const container = document.getElementById('view-operation');
+      const confirmedTime = appState.confirmedOps[op.id];
+
+      // Barre vitesse relative (max 2400 st/min)
+      const minPct = Math.round((op.speedSewingMin / 2400) * 100);
+      const maxPct = Math.round((op.speedSewingMax / 2400) * 100);
+      const widthPct = Math.max(maxPct - minPct, 8);
+
+      container.innerHTML = `
+        <!-- Bannière Alerte Sécurité AIRBAG -->
+        ${op.isSafetyCritical ? `
+          <div class="rounded-2xl bg-tesla-red text-white p-3.5 shadow-md shadow-red-600/25 border border-red-400">
+            <div class="flex items-start gap-2.5">
+              <svg class="w-6 h-6 shrink-0 mt-0.5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div>
+                <div class="text-xs font-extrabold uppercase tracking-wider">OPÉRATION CRITIQUE SÉCURITÉ — AIRBAG</div>
+                <div class="text-xs font-mono mt-1 bg-black/25 px-2.5 py-1.5 rounded-xl leading-snug">
+                  • Vitesse bridée : <strong>600–1200 st/min</strong><br>
+                  • Canette obligatoire : <strong>30 TEX</strong><br>
+                  • Guide : <strong>Notch Detection</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        ` : ''}
+
+        <!-- En-tête de Fiche Opération -->
+        <div class="bg-white dark:bg-tesla-slate rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div class="flex items-center justify-between gap-2 mb-1.5">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="px-2 py-0.5 rounded-md text-[11px] font-mono font-extrabold bg-slate-900 text-white dark:bg-slate-700">OP #${op.id}/9</span>
+              <span class="px-2 py-0.5 rounded-md text-[11px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">Matière : ${op.material}</span>
+              ${op.isDoubleNeedle ? `<span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">Double Aiguille</span>` : ''}
+            </div>
+            <span class="text-[11px] font-mono text-slate-400">← Swipe →</span>
+          </div>
+
+          <h2 class="text-xl font-extrabold text-slate-900 dark:text-white leading-tight">${op.name}</h2>
+          <div class="mt-1.5 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+            <span>${op.governance}</span>
+            ${confirmedTime ? `<span class="font-mono font-bold text-emerald-600 dark:text-emerald-400">✓ Validé ${confirmedTime}</span>` : ''}
+          </div>
+
+          <!-- Sélecteur Gauche / Droite pour Opérations Double Aiguille (Op 3 & Op 5) -->
+          ${op.isDoubleNeedle ? `
+            <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 block mb-1.5">Affichage Double Aiguille :</span>
+              <div class="grid grid-cols-3 gap-1.5 bg-slate-100 dark:bg-tesla-panel p-1 rounded-xl">
+                <button onclick="setDoubleNeedleSide('BOTH')" class="h-10 rounded-lg text-xs font-extrabold transition-all ${appState.doubleNeedleSide === 'BOTH' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500'}">G + D</button>
+                <button onclick="setDoubleNeedleSide('LEFT')" class="h-10 rounded-lg text-xs font-extrabold transition-all ${appState.doubleNeedleSide === 'LEFT' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500'}">Aig. Gauche</button>
+                <button onclick="setDoubleNeedleSide('RIGHT')" class="h-10 rounded-lg text-xs font-extrabold transition-all ${appState.doubleNeedleSide === 'RIGHT' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500'}">Aig. Droite</button>
+              </div>
+            </div>
+          ` : ''}
+        </div>
+
+        <!-- BLOC 1 : TENSIONS (CHIFFRES XXL EN MONOSPACE) -->
+        <div class="bg-white dark:bg-tesla-slate rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-extrabold uppercase tracking-wider text-tesla-red flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-tesla-red"></span>
+              1. Tensions Fil (cN)
+            </span>
+            <span class="text-[11px] font-mono text-slate-400">Tensiomètre</span>
+          </div>
+
+          ${op.isDoubleNeedle ? renderDoubleNeedleTensions(op) : `
+            <div class="grid grid-cols-2 gap-2.5">
+              <div class="p-3 rounded-xl bg-slate-50 dark:bg-tesla-panel border border-slate-200/80 dark:border-slate-700">
+                <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Tension Aiguille</span>
+                <span class="text-xl font-mono font-extrabold text-slate-900 dark:text-white mt-1 block">${op.tensionNeedle}</span>
+              </div>
+              <div class="p-3 rounded-xl bg-slate-50 dark:bg-tesla-panel border border-slate-200/80 dark:border-slate-700">
+                <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Tension Canette</span>
+                <span class="text-xl font-mono font-extrabold text-slate-900 dark:text-white mt-1 block">${op.tensionBobbin}</span>
+              </div>
+            </div>
+          `}
+          ${renderCheckButton(op.id, 'tensions', 'Valider Tensions (cN)')}
+        </div>
+
+        <!-- BLOC 2 : VITESSES MACHINE (CHIFFRES XXL) -->
+        <div class="bg-white dark:bg-tesla-slate rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              2. Vitesses Machine (stitches/min)
+            </span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <div class="p-3 rounded-xl ${op.isSafetyCritical ? 'bg-red-50 dark:bg-red-950/30 border border-red-300 dark:border-red-800' : 'bg-slate-50 dark:bg-tesla-panel border border-slate-200/80 dark:border-slate-700'}">
+              <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Vitesse Couture</span>
+              <span class="text-xl font-mono font-extrabold ${op.isSafetyCritical ? 'text-tesla-red' : 'text-slate-900 dark:text-white'} mt-1 block">${op.speedSewing}</span>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-50 dark:bg-tesla-panel border border-slate-200/80 dark:border-slate-700">
+              <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Point d'arrêt</span>
+              <span class="text-xl font-mono font-extrabold text-slate-900 dark:text-white mt-1 block">${op.speedBacktack}</span>
+            </div>
+          </div>
+
+          <!-- Jauge visuelle cadence -->
+          <div class="mt-3">
+            <div class="w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div class="h-full rounded-full ${op.isSafetyCritical ? 'bg-tesla-red' : 'bg-emerald-500'}" style="margin-left: ${minPct}%; width: ${widthPct}%;"></div>
+            </div>
+            <div class="flex justify-between text-[10px] font-mono text-slate-400 mt-1">
+              <span>0</span>
+              <span>1200</span>
+              <span>2400 st/min</span>
+            </div>
+          </div>
+          ${renderCheckButton(op.id, 'speeds', 'Valider Vitesses Machine')}
+        </div>
+
+        <!-- BLOC 3 : LONGUEUR DE POINT & COURSE (STROKE) -->
+        <div class="bg-white dark:bg-tesla-slate rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-extrabold uppercase tracking-wider text-tesla-blue flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-tesla-blue"></span>
+              3. Longueur de Point & Course
+            </span>
+          </div>
+
+          ${op.isDoubleNeedle ? renderDoubleNeedleStitchAndStroke(op) : `
+            <div class="space-y-2.5">
+              <div class="p-3 rounded-xl bg-slate-50 dark:bg-tesla-panel border border-slate-200/80 dark:border-slate-700 flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Longueur de point</span>
+                <span class="text-base font-mono font-extrabold text-slate-900 dark:text-white">${op.stitchLength}</span>
+              </div>
+              <div class="p-3 rounded-xl bg-slate-50 dark:bg-tesla-panel border border-slate-200/80 dark:border-slate-700 flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Course / Stroke</span>
+                <span class="text-lg font-mono font-extrabold text-slate-900 dark:text-white">${op.stroke}</span>
+              </div>
+            </div>
+          `}
+          ${renderCheckButton(op.id, 'stitch', 'Valider Point & Course')}
+        </div>
+
+        <!-- BLOC 4 : AIGUILLE & FILS (TEX / Nm) -->
+        <div class="bg-white dark:bg-tesla-slate rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+              4. Aiguille (Nm) & Fils (TEX)
+            </span>
+            <span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300">
+              Fil : ${op.threadType}
+            </span>
+          </div>
+
+          <div class="space-y-2.5">
+            ${op.isDoubleNeedle ? renderDoubleNeedleDiameter(op) : `
+              <div class="p-3 rounded-xl bg-slate-50 dark:bg-tesla-panel border border-slate-200/80 dark:border-slate-700 flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Aiguille (Nm)</span>
+                <span class="text-xl font-mono font-extrabold text-slate-900 dark:text-white">${op.needleDiameter}</span>
+              </div>
+            `}
+
+            <div class="grid grid-cols-2 gap-2.5">
+              <div class="p-3 rounded-xl bg-slate-50 dark:bg-tesla-panel border border-slate-200/80 dark:border-slate-700">
+                <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Fil Aiguille</span>
+                <span class="text-lg font-mono font-extrabold text-slate-900 dark:text-white mt-0.5 block">${op.threadNeedleType}</span>
+              </div>
+              <div class="p-3 rounded-xl ${op.threadBobbinType === '30 TEX' ? 'bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-800' : 'bg-slate-50 dark:bg-tesla-panel border border-slate-200/80 dark:border-slate-700'}">
+                <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Fil Canette</span>
+                <span class="text-lg font-mono font-extrabold ${op.threadBobbinType === '30 TEX' ? 'text-tesla-red' : 'text-slate-900 dark:text-white'} mt-0.5 block">${op.threadBobbinType}</span>
+              </div>
+            </div>
+          </div>
+          ${renderCheckButton(op.id, 'needle', 'Valider Aiguille & Fils')}
+        </div>
+
+        <!-- BLOC 5 : PIED PRESSEUR, PRESSION & GUIDAGE + SCHÉMA SVG -->
+        <div class="bg-white dark:bg-tesla-slate rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+              5. Pied Presseur & Guide
+            </span>
+            <span class="px-2 py-0.5 rounded-md text-[11px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
+              Pression : ${op.presserFootPressure}
+            </span>
+          </div>
+
+          <div class="p-3 rounded-xl bg-slate-50 dark:bg-tesla-panel border border-slate-200/80 dark:border-slate-700 mb-3">
+            <span class="text-[10px] font-bold uppercase text-slate-400 block mb-1">Configuration Pied & Guide :</span>
+            <p class="text-sm font-bold text-slate-900 dark:text-white leading-snug">${op.presserFootDescription}</p>
+            <span class="text-[11px] font-mono text-slate-500 mt-1.5 block">Visuels : ${op.presserFootVisuals}</span>
+          </div>
+
+          <!-- Schéma Technique SVG -->
+          ${getSchematicSVG(op.schematicType)}
+
+          ${renderCheckButton(op.id, 'foot', 'Valider Pied & Guide')}
+        </div>
+
+        <!-- BLOC 6 : MATIÈRE & RÉFÉRENCE POSTE -->
+        <div class="bg-white dark:bg-tesla-slate rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-xs font-extrabold uppercase tracking-wider text-slate-500">6. Matière & Standard</span>
+              <p class="text-sm font-mono font-bold text-slate-900 dark:text-white mt-0.5">Matière : ${op.material} • Pression : ${op.presserFootPressure}</p>
+            </div>
+            <button onclick="copyMobileSpec(${op.id})" class="h-11 px-3 rounded-xl bg-slate-100 dark:bg-tesla-panel text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 active:scale-95">
+              Copier
+            </button>
+          </div>
+          ${renderCheckButton(op.id, 'material', 'Valider Matière TEP')}
+        </div>
+      `;
+    }
+
+    // Helpers d'affichage empilé ou filtré G/D pour opérations double aiguille
+    function renderDoubleNeedleTensions(op) {
+      const side = appState.doubleNeedleSide;
+      if (side === 'LEFT') {
+        return `
+          <div class="grid grid-cols-2 gap-2.5">
+            <div class="p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800">
+              <span class="text-[11px] font-bold text-indigo-700 dark:text-indigo-300 block">Aig. Gauche</span>
+              <span class="text-xl font-mono font-extrabold text-slate-900 dark:text-white mt-1 block">${op.tensionNeedleLeft}</span>
+            </div>
+            <div class="p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800">
+              <span class="text-[11px] font-bold text-indigo-700 dark:text-indigo-300 block">Canette Gauche</span>
+              <span class="text-xl font-mono font-extrabold text-slate-900 dark:text-white mt-1 block">${op.tensionBobbinLeft}</span>
+            </div>
+          </div>`;
+      }
+      if (side === 'RIGHT') {
+        return `
+          <div class="grid grid-cols-2 gap-2.5">
+            <div class="p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800">
+              <span class="text-[11px] font-bold text-indigo-700 dark:text-indigo-300 block">Aig. Droite</span>
+              <span class="text-xl font-mono font-extrabold text-slate-900 dark:text-white mt-1 block">${op.tensionNeedleRight}</span>
+            </div>
+            <div class="p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800">
+              <span class="text-[11px] font-bold text-indigo-700 dark:text-indigo-300 block">Canette Droite</span>
+              <span class="text-xl font-mono font-extrabold text-slate-900 dark:text-white mt-1 block">${op.tensionBobbinRight}</span>
+            </div>
+          </div>`;
+      }
+      return `
+        <div class="space-y-2.5">
+          <div class="p-3 rounded-xl bg-slate-50 dark:bg-tesla-panel border border-slate-200 dark:border-slate-700">
+            <span class="text-[11px] font-bold text-slate-500 block mb-1.5">Tension Fil Aiguille (cN)</span>
+            <div class="grid grid-cols-2 gap-2">
+              <div class="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-700">
+                <span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 block">GAUCHE</span>
+                <span class="text-base font-mono font-extrabold text-slate-900 dark:text-white">${op.tensionNeedleLeft}</span>
+              </div>
+              <div class="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-700">
+                <span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 block">DROITE</span>
+                <span class="text-base font-mono font-extrabold text-slate-900 dark:text-white">${op.tensionNeedleRight}</span>
+              </div>
+            </div>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-50 dark:bg-tesla-panel border border-slate-200 dark:border-slate-700">
+            <span class="text-[11px] font-bold text-slate-500 block mb-1.5">Tension Fil Canette (cN)</span>
+            <div class="grid grid-cols-2 gap-2">
+              <div class="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-700">
+                <span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 block">GAUCHE</span>
+                <span class="text-base font-mono font-extrabold text-slate-900 dark:text-white">${op.tensionBobbinLeft}</span>
+              </div>
+              <div class="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-700">
+                <span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 block">DROITE</span>
+                <span class="text-base font-mono font-extrabold text-slate-900 dark:text-white">${op.tensionBobbinRight}</span>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function renderDoubleNeedleStitchAndStroke(op) {
+      const side = appState.doubleNeedleSide;
+      if (side === 'LEFT') {
+        return `
+          <div class="space-y-2">
+            <div class="p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 flex justify-between items-center">
+              <span class="text-xs font-bold text-indigo-700 dark:text-indigo-300">Point Gauche</span>
+              <span class="text-sm font-mono font-extrabold text-slate-900 dark:text-white">${op.stitchLengthLeft}</span>
+            </div>
+            <div class="p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 flex justify-between items-center">
+              <span class="text-xs font-bold text-indigo-700 dark:text-indigo-300">Stroke Gauche</span>
+              <span class="text-lg font-mono font-extrabold text-slate-900 dark:text-white">${op.strokeLeft}</span>
+            </div>
+          </div>`;
+      }
+      if (side === 'RIGHT') {
+        return `
+          <div class="space-y-2">
+            <div class="p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 flex justify-between items-center">
+              <span class="text-xs font-bold text-indigo-700 dark:text-indigo-300">Point Droite</span>
+              <span class="text-sm font-mono font-extrabold text-slate-900 dark:text-white">${op.stitchLengthRight}</span>
+            </div>
+            <div class="p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 flex justify-between items-center">
+              <span class="text-xs font-bold text-indigo-700 dark:text-indigo-300">Stroke Droite</span>
+              <span class="text-lg font-mono font-extrabold text-slate-900 dark:text-white">${op.strokeRight}</span>
+            </div>
+          </div>`;
+      }
+      return `
+        <div class="space-y-2.5">
+          <div class="p-3 rounded-xl bg-slate-50 dark:bg-tesla-panel border border-slate-200 dark:border-slate-700 space-y-1.5">
+            <span class="text-[11px] font-bold text-slate-500 block">Longueur de point</span>
+            <div class="text-xs font-mono font-bold text-slate-900 dark:text-white">• Aig. gauche : ${op.stitchLengthLeft}</div>
+            <div class="text-xs font-mono font-bold text-slate-900 dark:text-white">• Aig. droite : ${op.stitchLengthRight}</div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-tesla-panel border border-slate-200 dark:border-slate-700">
+              <span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 block">STROKE GAUCHE</span>
+              <span class="text-base font-mono font-extrabold text-slate-900 dark:text-white">${op.strokeLeft}</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-tesla-panel border border-slate-200 dark:border-slate-700">
+              <span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 block">STROKE DROITE</span>
+              <span class="text-base font-mono font-extrabold text-slate-900 dark:text-white">${op.strokeRight}</span>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function renderDoubleNeedleDiameter(op) {
+      const side = appState.doubleNeedleSide;
+      if (side === 'LEFT') {
+        return `
+          <div class="p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 flex justify-between items-center">
+            <span class="text-xs font-bold text-indigo-700 dark:text-indigo-300">Aiguille Gauche (Nm)</span>
+            <span class="text-xl font-mono font-extrabold text-slate-900 dark:text-white">${op.needleDiameterLeft}</span>
+          </div>`;
+      }
+      if (side === 'RIGHT') {
+        return `
+          <div class="p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 flex justify-between items-center">
+            <span class="text-xs font-bold text-indigo-700 dark:text-indigo-300">Aiguille Droite (Nm)</span>
+            <span class="text-xl font-mono font-extrabold text-slate-900 dark:text-white">${op.needleDiameterRight}</span>
+          </div>`;
+      }
+      return `
+        <div class="grid grid-cols-2 gap-2">
+          <div class="p-3 rounded-xl bg-slate-50 dark:bg-tesla-panel border border-slate-200 dark:border-slate-700">
+            <span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 block">AIGUILLE GAUCHE</span>
+            <span class="text-lg font-mono font-extrabold text-slate-900 dark:text-white mt-0.5 block">${op.needleDiameterLeft}</span>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-50 dark:bg-tesla-panel border border-slate-200 dark:border-slate-700">
+            <span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 block">AIGUILLE DROITE</span>
+            <span class="text-lg font-mono font-extrabold text-slate-900 dark:text-white mt-0.5 block">${op.needleDiameterRight}</span>
+          </div>
+        </div>`;
+    }
+
+    function copyMobileSpec(id) {
+      const op = OPERATIONS_DATA.find(o => o.id === id);
+      if (!op) return;
+      const txt = `TESLA #${op.id} ${op.name} | Fil: ${op.threadType} | Point: ${op.stitchLength} | T.Aig: ${op.tensionNeedle} | T.Can: ${op.tensionBobbin} | Stroke: ${op.stroke} | Vit: ${op.speedSewing} | Aig: ${op.needleDiameter} (${op.threadNeedleType}/${op.threadBobbinType}) | Pied: ${op.presserFootDescription}`;
+      const ta = document.createElement('textarea');
+      ta.value = txt;
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        showToast('Paramètres copiés !', 'success');
+      } catch (e) {
+        showToast('Copie non disponible', 'danger');
+      }
+      document.body.removeChild(ta);
+    }
+
+    // =========================================================================
+    // 7. MODE CONTRÔLE RÉGLAGE OPÉRATEUR & BARRE FIXE EN BAS
+    // =========================================================================
+    function toggleChecklistMode() {
+      appState.checklistMode = !appState.checklistMode;
+      const pill = document.getElementById('checklist-status-pill');
+      const btn = document.getElementById('btn-checklist-toggle');
+
+      if (appState.checklistMode) {
+        pill.textContent = 'ON';
+        pill.className = 'text-[11px] font-mono font-extrabold px-1.5 py-0.5 rounded bg-emerald-600 text-white';
+        btn.classList.add('border-emerald-500');
+        switchBottomTab('operation');
+        showToast('Mode Contrôle Opérateur activé', 'success');
+      } else {
+        pill.textContent = 'OFF';
+        pill.className = 'text-[11px] font-mono font-extrabold px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300';
+        btn.classList.remove('border-emerald-500');
+        showToast('Mode Contrôle désactivé');
+      }
+
+      renderOperationView();
+      updateChecklistFooter();
+    }
+
+    function updateChecklistFooter() {
+      const footer = document.getElementById('checklist-sticky-footer');
+      if (!appState.checklistMode || appState.activeTab !== 'operation') {
+        footer.classList.add('hidden');
+        return;
+      }
+
+      footer.classList.remove('hidden');
+      const op = OPERATIONS_DATA.find(o => o.id === appState.selectedOpId);
+      const keys = ['tensions', 'speeds', 'stitch', 'needle', 'foot', 'material'];
+      const count = keys.filter(k => appState.checkedItems[`${op.id}-${k}`]).length;
+
+      const badge = document.getElementById('checklist-counter-badge');
+      const title = document.getElementById('checklist-footer-title');
+      const sub = document.getElementById('checklist-footer-sub');
+      const btn = document.getElementById('btn-confirm-conformity');
+
+      badge.textContent = `${count}/6`;
+      title.textContent = `Poste : ${op.name}`;
+
+      if (count === 6) {
+        badge.className = 'px-2 py-0.5 rounded-md font-mono text-xs font-extrabold bg-emerald-500 text-slate-950';
+        sub.textContent = 'Tous les réglages sont vérifiés ✓';
+        btn.className = 'h-11 px-3.5 rounded-xl text-xs font-extrabold bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-md active:scale-95 transition-all shrink-0';
+      } else {
+        badge.className = 'px-2 py-0.5 rounded-md font-mono text-xs font-extrabold bg-amber-400 text-slate-950';
+        sub.textContent = `Reste ${6 - count} point(s) à contrôler`;
+        btn.className = 'h-11 px-3.5 rounded-xl text-xs font-extrabold bg-slate-700 text-slate-200 border border-slate-600 active:scale-95 transition-all shrink-0';
+      }
+    }
+
+    function confirmPostConformity() {
+      const op = OPERATIONS_DATA.find(o => o.id === appState.selectedOpId);
+      const keys = ['tensions', 'speeds', 'stitch', 'needle', 'foot', 'material'];
+      const count = keys.filter(k => appState.checkedItems[`${op.id}-${k}`]).length;
+
+      if (count < 6) {
+        showToast(`Contrôlez les ${6 - count} points restants avant validation`, 'danger');
+        return;
+      }
+
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      appState.confirmedOps[op.id] = timeStr;
+      initOperationSelectors();
+      renderOperationView();
+      showToast(`Conformité poste "${op.name}" confirmée à ${timeStr}`, 'success');
+    }
+
+    // =========================================================================
+    // 8. ONGLET 2 : COMPARATEUR A vs B MOBILE
+    // =========================================================================
+    function initCompareSelectors() {
+      const selA = document.getElementById('compare-select-a');
+      const selB = document.getElementById('compare-select-b');
+      const opts = OPERATIONS_DATA.map(op => `<option value="${op.id}">${op.id}. ${op.name}</option>`).join('');
+      selA.innerHTML = opts;
+      selB.innerHTML = opts;
+      selA.value = appState.compareA;
+      selB.value = appState.compareB;
+    }
+
+    function updateCompareSelection() {
+      appState.compareA = Number(document.getElementById('compare-select-a').value);
+      appState.compareB = Number(document.getElementById('compare-select-b').value);
+      renderCompareView();
+    }
+
+    function renderCompareView() {
+      const opA = OPERATIONS_DATA.find(o => o.id === appState.compareA);
+      const opB = OPERATIONS_DATA.find(o => o.id === appState.compareB);
+      const diffOnly = document.getElementById('diff-only-toggle').checked;
+      const container = document.getElementById('compare-cards-container');
+
+      const specs = [
+        { label: "Type de fil", valA: opA.threadType, valB: opB.threadType },
+        { label: "Tension Aiguille (cN)", valA: opA.tensionNeedle, valB: opB.tensionNeedle, mono: true },
+        { label: "Tension Canette (cN)", valA: opA.tensionBobbin, valB: opB.tensionBobbin, mono: true },
+        { label: "Vitesse Couture (st/min)", valA: opA.speedSewing, valB: opB.speedSewing, mono: true },
+        { label: "Point d'arrêt (st/min)", valA: opA.speedBacktack, valB: opB.speedBacktack, mono: true },
+        { label: "Longueur de point", valA: opA.stitchLength, valB: opB.stitchLength, mono: true },
+        { label: "Course / Stroke", valA: opA.stroke, valB: opB.stroke, mono: true },
+        { label: "Aiguille (Nm)", valA: opA.needleDiameter, valB: opB.needleDiameter, mono: true },
+        { label: "Fil Aiguille (TEX)", valA: opA.threadNeedleType, valB: opB.threadNeedleType, mono: true },
+        { label: "Fil Canette (TEX)", valA: opA.threadBobbinType, valB: opB.threadBobbinType, mono: true },
+        { label: "Pied Presseur & Guide", valA: opA.presserFootDescription, valB: opB.presserFootDescription },
+        { label: "Matière & Pression", valA: `${opA.material} • ${opA.presserFootPressure}`, valB: `${opB.material} • ${opB.presserFootPressure}` }
+      ];
+
+      const filteredSpecs = specs.filter(s => !diffOnly || s.valA !== s.valB);
+
+      if (filteredSpecs.length === 0) {
+        container.innerHTML = `<div class="bg-white dark:bg-tesla-slate p-6 rounded-2xl text-center text-xs text-slate-500 border border-slate-200 dark:border-slate-800">Aucun écart entre ces deux opérations.</div>`;
+        return;
+      }
+
+      container.innerHTML = filteredSpecs.map(s => {
+        const isDiff = s.valA !== s.valB;
+        return `
+          <div class="rounded-2xl p-3.5 border transition-all ${
+            isDiff
+              ? 'bg-amber-50/70 dark:bg-amber-950/20 border-amber-300 dark:border-amber-800/70'
+              : 'bg-white dark:bg-tesla-slate border-slate-200 dark:border-slate-800'
+          }">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">${s.label}</span>
+              ${isDiff
+                ? `<span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-200 text-amber-900 dark:bg-amber-900 dark:text-amber-200">ÉCART</span>`
+                : `<span class="text-[10px] font-mono text-slate-400">Identique</span>`
+              }
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div class="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700">
+                <span class="text-[9px] font-mono font-bold text-tesla-red block mb-0.5">A • #${opA.id}</span>
+                <span class="text-xs ${s.mono ? 'font-mono font-extrabold' : 'font-bold'} text-slate-900 dark:text-white break-words">${s.valA}</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700">
+                <span class="text-[9px] font-mono font-bold text-tesla-blue block mb-0.5">B • #${opB.id}</span>
+                <span class="text-xs ${s.mono ? 'font-mono font-extrabold' : 'font-bold'} text-slate-900 dark:text-white break-words">${s.valB}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // =========================================================================
+    // 9. ONGLET 3 : MATRICE ACCORDÉON COMPACTE MOBILE + EXPORT CSV
+    // =========================================================================
+    function setMatrixFilter(filter) {
+      appState.matrixFilter = filter;
+      document.querySelectorAll('.mfilter-btn').forEach(btn => {
+        btn.className = 'mfilter-btn h-10 px-3.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-tesla-panel text-slate-700 dark:text-slate-300 shrink-0';
+      });
+      const activeBtn = document.getElementById(`mfilter-${filter}`);
+      if (activeBtn) {
+        activeBtn.className = 'mfilter-btn h-10 px-3.5 rounded-xl text-xs font-bold bg-tesla-red text-white shrink-0';
+      }
+      renderMatrixAccordion();
+    }
+
+    function toggleAccordion(id) {
+      appState.expandedAccordionId = appState.expandedAccordionId === id ? null : id;
+      renderMatrixAccordion();
+    }
+
+    function renderMatrixAccordion() {
+      const list = document.getElementById('matrix-accordion-list');
+      const items = OPERATIONS_DATA.filter(op =>
+        appState.matrixFilter === 'ALL' || op.threadFilter === appState.matrixFilter
+      );
+
+      list.innerHTML = items.map(op => {
+        const isOpen = appState.expandedAccordionId === op.id;
+        return `
+          <div class="rounded-2xl border overflow-hidden transition-all ${
+            op.isSafetyCritical
+              ? 'bg-red-50/40 dark:bg-red-950/20 border-red-300 dark:border-red-800'
+              : 'bg-white dark:bg-tesla-slate border-slate-200 dark:border-slate-800'
+          }">
+            <!-- En-tête accordéon tactile (>= 56px) -->
+            <button onclick="toggleAccordion(${op.id})" class="w-full p-3.5 text-left flex items-center justify-between gap-2 min-h-[58px]">
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-mono font-extrabold px-1.5 py-0.5 rounded bg-slate-900 text-white dark:bg-slate-700">${op.id}</span>
+                  <span class="text-sm font-extrabold text-slate-900 dark:text-white truncate">${op.name}</span>
+                  ${op.isSafetyCritical ? '<span class="px-1.5 py-0.5 rounded bg-tesla-red text-white text-[9px] font-extrabold uppercase">Critique</span>' : ''}
+                </div>
+                <div class="text-[11px] font-mono text-slate-500 dark:text-slate-400 mt-1 truncate">
+                  Fil: ${op.threadType} • Aig: ${op.needleDiameter} • Vit: ${op.speedSewing}
+                </div>
+              </div>
+              <svg class="w-5 h-5 text-slate-400 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            <!-- Détails dépliés -->
+            ${isOpen ? `
+              <div class="px-3.5 pb-3.5 pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2 text-xs">
+                <div class="grid grid-cols-2 gap-2">
+                  <div class="p-2 rounded-xl bg-slate-50 dark:bg-tesla-panel">
+                    <span class="text-[10px] text-slate-400 block">Tension Aiguille</span>
+                    <strong class="font-mono text-slate-900 dark:text-white">${op.tensionNeedle}</strong>
+                  </div>
+                  <div class="p-2 rounded-xl bg-slate-50 dark:bg-tesla-panel">
+                    <span class="text-[10px] text-slate-400 block">Tension Canette</span>
+                    <strong class="font-mono text-slate-900 dark:text-white">${op.tensionBobbin}</strong>
+                  </div>
+                  <div class="p-2 rounded-xl bg-slate-50 dark:bg-tesla-panel">
+                    <span class="text-[10px] text-slate-400 block">Fils (Aig / Can)</span>
+                    <strong class="font-mono text-slate-900 dark:text-white">${op.threadNeedleType} / ${op.threadBobbinType}</strong>
+                  </div>
+                  <div class="p-2 rounded-xl bg-slate-50 dark:bg-tesla-panel">
+                    <span class="text-[10px] text-slate-400 block">Course / Arrêt</span>
+                    <strong class="font-mono text-slate-900 dark:text-white">${op.stroke} • ${op.speedBacktack}</strong>
+                  </div>
+                </div>
+                <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-tesla-panel">
+                  <span class="text-[10px] text-slate-400 block">Longueur point & Pied/Guide</span>
+                  <div class="font-mono font-bold text-slate-800 dark:text-slate-200 mt-0.5">${op.stitchLength}</div>
+                  <div class="font-semibold text-slate-700 dark:text-slate-300 mt-1">${op.presserFootDescription}</div>
+                </div>
+                <button onclick="jumpToOperation(${op.id})" class="w-full h-11 rounded-xl bg-tesla-red text-white font-extrabold text-xs flex items-center justify-center gap-1.5 active:scale-[0.98]">
+                  <span>Ouvrir la fiche complète #${op.id}</span>
+                  <span>→</span>
+                </button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function exportCSV() {
+      const headers = [
+        "Fonction Machine", "Type de fil", "Matière", "Longueur de point",
+        "Tension Fil Aiguille (cN)", "Tension Fil Canette (cN)", "Course / Stroke",
+        "Vitesse Couture (stitches/min)", "Vitesse Point d'arrêt (stitches/min)",
+        "Aiguille (Nm)", "Fil Aiguille", "Fil Canette",
+        "Pression Pied Presseur", "Visuels", "Description Pied Presseur & Guide"
+      ];
+      const rows = [headers.join(';')];
+      OPERATIONS_DATA.forEach(op => {
+        rows.push([
+          op.name, op.threadType, op.material, op.stitchLength,
+          op.tensionNeedle, op.tensionBobbin, op.stroke,
+          op.speedSewing, op.speedBacktack,
+          op.needleDiameter, op.threadNeedleType, op.threadBobbinType,
+          op.presserFootPressure, op.presserFootVisuals, op.presserFootDescription
+        ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(';'));
+      });
+
+      const blob = new Blob(["\uFEFF" + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Matrice_TESLA_Parametres_Machines.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Export CSV téléchargé', 'success');
+    }
+
+    // =========================================================================
+    // 10. ONGLET 4 : GRAPHIQUES VERTICAUX MOBILES & VISAS GOUVERNANCE
+    // =========================================================================
+    function renderMobileCharts() {
+      const tensionsBox = document.getElementById('mobile-chart-tensions');
+      const speedsBox = document.getElementById('mobile-chart-speeds');
+
+      tensionsBox.innerHTML = OPERATIONS_DATA.map(op => {
+        const wAig = Math.round((op.tensionNeedleMax / 550) * 100);
+        const wCan = Math.round((op.tensionBobbinMax / 550) * 100);
+        return `
+          <div>
+            <div class="flex justify-between text-[11px] mb-1">
+              <span class="font-bold text-slate-800 dark:text-slate-200 truncate pr-2">${op.id}. ${op.name}</span>
+              <span class="font-mono text-slate-500 shrink-0">${op.tensionNeedleMax} / ${op.tensionBobbinMax} cN</span>
+            </div>
+            <div class="space-y-1">
+              <div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full bg-tesla-red rounded-full" style="width: ${wAig}%"></div>
+              </div>
+              <div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full bg-tesla-blue rounded-full" style="width: ${wCan}%"></div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      speedsBox.innerHTML = OPERATIONS_DATA.map(op => {
+        const leftPct = Math.round((op.speedSewingMin / 2400) * 100);
+        const widthPct = Math.max(Math.round(((op.speedSewingMax - op.speedSewingMin) / 2400) * 100), 6);
+        return `
+          <div>
+            <div class="flex justify-between text-[11px] mb-1">
+              <span class="font-bold ${op.isSafetyCritical ? 'text-tesla-red' : 'text-slate-800 dark:text-slate-200'} truncate pr-2">${op.id}. ${op.name}</span>
+              <span class="font-mono font-bold ${op.isSafetyCritical ? 'text-tesla-red' : 'text-slate-500'} shrink-0">${op.speedSewing}</span>
+            </div>
+            <div class="w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div class="h-full rounded-full ${op.isSafetyCritical ? 'bg-tesla-red' : 'bg-emerald-500'}" style="margin-left: ${leftPct}%; width: ${widthPct}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function saveVisas() {
+      showToast('Visa enregistré sur la session', 'info');
+    }
+
+    // =========================================================================
+    // 11. NAVIGATION BOTTOM TAB BAR & GESTES TACTILES (SWIPE GAUCHE / DROITE)
+    // =========================================================================
+    function switchBottomTab(tab) {
+      appState.activeTab = tab;
+      const tabs = ['operation', 'comparer', 'matrice', 'infos'];
+      const opNavStrip = document.getElementById('operation-nav-strip');
+
+      tabs.forEach(t => {
+        const sec = document.getElementById(`view-${t}`);
+        const navBtn = document.getElementById(`nav-${t}`);
+        if (t === tab) {
+          sec.classList.remove('hidden');
+          navBtn.classList.add('text-tesla-red', 'font-extrabold');
+          navBtn.classList.remove('text-slate-500', 'dark:text-slate-400', 'font-semibold');
+        } else {
+          sec.classList.add('hidden');
+          navBtn.classList.remove('text-tesla-red', 'font-extrabold');
+          navBtn.classList.add('text-slate-500', 'dark:text-slate-400', 'font-semibold');
+        }
+      });
+
+      // Afficher la barre sélecteur d'opération uniquement sur l'onglet Opération
+      if (tab === 'operation') {
+        opNavStrip.classList.remove('hidden');
+      } else {
+        opNavStrip.classList.add('hidden');
+      }
+
+      if (tab === 'comparer') renderCompareView();
+      if (tab === 'matrice') renderMatrixAccordion();
+      if (tab === 'infos') renderMobileCharts();
+
+      updateChecklistFooter();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Détection du balayage tactile (Swipe gauche / droite) sur la fiche Opération
+    function setupTouchSwipe() {
+      const swipeArea = document.getElementById('main-swipe-area');
+      let touchStartX = 0;
+      let touchStartY = 0;
+
+      swipeArea.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+        touchStartY = e.changedTouches[0].screenY;
+      }, { passive: true });
+
+      swipeArea.addEventListener('touchend', (e) => {
+        if (appState.activeTab !== 'operation') return;
+        const touchEndX = e.changedTouches[0].screenX;
+        const touchEndY = e.changedTouches[0].screenY;
+        const deltaX = touchEndX - touchStartX;
+        const deltaY = touchEndY - touchStartY;
+
+        // Balayage horizontal franc (> 65px) et principalement horizontal
+        if (Math.abs(deltaX) > 65 && Math.abs(deltaX) > Math.abs(deltaY) * 1.4) {
+          if (deltaX < 0) {
+            nextOperation();
+          } else {
+            prevOperation();
+          }
+        }
+      }, { passive: true });
+    }
+
+    // =========================================================================
+    // 12. INITIALISATION
+    // =========================================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      initOperationSelectors();
+      renderOperationView();
+      initCompareSelectors();
+      renderCompareView();
+      renderMatrixAccordion();
+      renderMobileCharts();
+      setupTouchSwipe();
+    });
+  </script>
+</body>
+</html>
